@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "uartrpcserver.h": "c",
+        "stdint.h": "c",
+        "checksum.h": "c",
+        "cstdlib": "c"
+    }
+}

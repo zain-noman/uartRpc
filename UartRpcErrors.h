@@ -1,0 +1,13 @@
+#pragma once
+
+enum UartRpcError{
+    //common
+    UART_RPC_CRC_MISMATCH,
+    UART_RPC_FRAMING_ERROR,
+
+    //client
+    UART_RPC_TIMEOUT,
+    UART_RPC_INCORRECT_RESPONSE_TYPE,
+    UART_RPC_MISSING_PACKET_IN_STREAM,
+    UART_RPC_UNSOLICITED_MESSAGE,
+};
