@@ -63,11 +63,10 @@ void uartRpcClientSendRequest(
     struct UartRpcClient* rpc,
     uint8_t type,
     uint8_t* data,
-    uint8_t dataSize,
-    bool isResponseStream
+    uint8_t dataSize
 );
 
-void uartRpcClientOnReceiveUartData(
+void uartRpcClientOnReceiveData(
     struct UartRpcClient* client,
     uint8_t data
 );

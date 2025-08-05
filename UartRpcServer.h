@@ -19,6 +19,8 @@ struct UartRpcServer{
     void (*onError)(enum UartRpcError error);
 };
 
+void uartRpcServerInit();
+
 // for servers only
 void uartRpcServerSendResponse(
     struct UartRpcServer* rpc,
@@ -37,7 +39,7 @@ void uartRpcServerSendStreamPacket(
     uint8_t dataSize
 );
 
-void uartRpcServerOnReceiveUartData(
+void uartRpcServerOnReceiveData(
     struct UartRpcServer* client,
     uint8_t data
 );

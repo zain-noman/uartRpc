@@ -1,11 +1,14 @@
 #include "UartRpcClient.h"
 #include "UartRpcServer.h"
 #include <stddef.h>
+#include <stdio.h>
 
 void mockStartOrResetTimer(void *context, int timerTimeMs){
+    printf("timer was reset\n");
 }
 
 void mockStopTimer(void* context){
+    printf("timer was stopped\n");
 }
 
 void mockClientUartSend(void *context, const uint8_t *data, uint8_t dataSize)
@@ -57,6 +60,9 @@ int main()
         .onRequestReceived = onRequestReceived,
         .onError = serverErrorHandler
     };
-
+    uartRpcServerInit();
     
+    uartRpcClientSendRequest(&client,12,NULL,0);
+
+
 }

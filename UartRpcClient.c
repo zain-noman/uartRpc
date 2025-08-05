@@ -22,8 +22,7 @@ void uartRpcClientSendRequest(
     struct UartRpcClient* rpc,
     uint8_t type,
     uint8_t* data,
-    uint8_t dataSize,
-    bool isResponseStream
+    uint8_t dataSize
 )
 {
     if (type >= 128) return;
@@ -43,7 +42,7 @@ void uartRpcClientSendRequest(
         rpc->_txBuffer);
     rpc->uartSend(rpc->context,rpc->_txBuffer,finalSize);
 
-    if (isResponseStream){
+    if (type > 128){
         rpc->_state = UART_RPC_RECEIVING_STREAM;
         rpc->_expectedStreamPacketId = 0;
     } else {
@@ -53,7 +52,7 @@ void uartRpcClientSendRequest(
         ,rpc->responseTimeMs);
 }
 
-void uartRpcClientOnReceiveUartData(
+void uartRpcClientOnReceiveData(
     struct UartRpcClient* client,
     uint8_t data
 ){

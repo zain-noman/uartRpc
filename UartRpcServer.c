@@ -55,15 +55,37 @@ void uartRpcServerSendStreamPacket(
     rpc->uartSend(rpc->context,rpc->_txBuffer,finalSize);
 }
 
-void uartRpcServerOnReceiveUartData(
+void uartRpcServerOnReceiveData(
     struct UartRpcServer* client,
     uint8_t data
 )
 {
     CobsDecoderStatus status = cobsDecoderAppend(
-        &(client->_cobsDecoder),
-        data
-    );
-    if ( status != COBS_OK && client->onError != NULL)
-        client->onError(UART_RPC_FRAMING_ERROR);
+        &(client->_cobsDecoder),data);
+
+    if (status == COBS_OK)
+        return;
+    
+    if (status != COBS_MESSAGE_COMPLETE){
+        if (client->onError != NULL)
+            client->onError(UART_RPC_FRAMING_ERROR);
+        return;
+    }
+    
+    //verify crc
+    uint8_t* messagePtr = NULL;
+    int messageLen;
+    cobsDecoderGetMessageByRef(&(client->_cobsDecoder),
+        &messagePtr, &messageLen);
+    uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
+    if (messagePtr[messageLen-1] != calculatedCrc){
+        if (client->onError != NULL)
+            client->onError(UART_RPC_CRC_MISMATCH);
+        return;
+    }
+}
+
+void uartRpcServerInit()
+{
+    //nothing yet
 }
