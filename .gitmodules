@@ -1,6 +1,3 @@
-[submodule "cobslib"]
-	path = cobslib
-	url = ../cobs_lib
 [submodule "libcrc"]
 	path = libcrc
 	url = https://github.com/lammertb/libcrc.git
