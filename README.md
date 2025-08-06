@@ -37,7 +37,7 @@ Often times we run into a situation where we want to monitor something, for exam
 
 The subtype field allows for sending things like errrors and end of stream. The Index-In-Stream field gives a way to determine if any packets were missed. Index in stream begins with 0 
 
-The subtype '0xF' is reserved for end of stream
+subtypes greater than or equal to 8 indicate end of stream
 
 ## Non Blocking, Callback based api
 such api's can be a bit cumbersome to use but are easier to implement in a platform agnostic way.

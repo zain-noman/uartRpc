@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "cobs.h"
-#include "UartRpcErrors.h"
+#include "UartRpcCommon.h"
 
 struct UartRpcServer{
     void* context;
@@ -15,7 +15,7 @@ struct UartRpcServer{
 
     // callbacks
     void (*onRequestReceived)
-        (uint8_t* message, uint8_t msgLen);
+        (uint8_t type, uint8_t* message, uint8_t msgLen);
     void (*onError)(enum UartRpcError error);
 };
 
@@ -40,6 +40,6 @@ void uartRpcServerSendStreamPacket(
 );
 
 void uartRpcServerOnReceiveData(
-    struct UartRpcServer* client,
+    struct UartRpcServer* server,
     uint8_t data
 );

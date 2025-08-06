@@ -1,5 +1,9 @@
 #pragma once
 
+#define STOP_SENDING_STREAM_COMMAND_TYPE 0xFF
+#define END_OF_STREAM_SUB_TYPE 8
+#define STREAM_COMMAND_RESPONSE_CODE 128
+
 enum UartRpcError{
     //common
     UART_RPC_CRC_MISMATCH,

@@ -2,11 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "cobs.h"
-#include "UartRpcErrors.h"
-
-#define STOP_SENDING_STREAM_COMMAND_TYPE 0xFF
-
-
+#include "UartRpcCommon.h"
 
 enum UartRpcClientState{
     UART_RPC_IDLE,
@@ -71,3 +67,4 @@ void uartRpcClientOnReceiveData(
     uint8_t data
 );
 
+void stopStream(struct UartRpcClient* client);

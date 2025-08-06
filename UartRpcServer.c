@@ -16,7 +16,7 @@ void uartRpcServerSendResponse(
         rpc->_tempTxBuffer[i+1] = data[i];
     }
     
-    rpc->_tempTxBuffer[dataSize+3] = crc_8(
+    rpc->_tempTxBuffer[dataSize+1] = crc_8(
         rpc->_tempTxBuffer,
         dataSize+1
     );
@@ -56,33 +56,35 @@ void uartRpcServerSendStreamPacket(
 }
 
 void uartRpcServerOnReceiveData(
-    struct UartRpcServer* client,
+    struct UartRpcServer* server,
     uint8_t data
 )
 {
     CobsDecoderStatus status = cobsDecoderAppend(
-        &(client->_cobsDecoder),data);
+        &(server->_cobsDecoder),data);
 
     if (status == COBS_OK)
         return;
     
     if (status != COBS_MESSAGE_COMPLETE){
-        if (client->onError != NULL)
-            client->onError(UART_RPC_FRAMING_ERROR);
+        if (server->onError != NULL)
+            server->onError(UART_RPC_FRAMING_ERROR);
         return;
     }
     
     //verify crc
     uint8_t* messagePtr = NULL;
     int messageLen;
-    cobsDecoderGetMessageByRef(&(client->_cobsDecoder),
+    cobsDecoderGetMessageByRef(&(server->_cobsDecoder),
         &messagePtr, &messageLen);
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
-        if (client->onError != NULL)
-            client->onError(UART_RPC_CRC_MISMATCH);
+        if (server->onError != NULL)
+            server->onError(UART_RPC_CRC_MISMATCH);
         return;
     }
+    server->onRequestReceived(messagePtr[0],messagePtr+1,
+        messageLen-2);
 }
 
 void uartRpcServerInit()

@@ -25,7 +25,6 @@ void uartRpcClientSendRequest(
     uint8_t dataSize
 )
 {
-    if (type >= 128) return;
     if (dataSize > 249) return;
 
     rpc->_tempTxBuffer[0] = type;
@@ -33,16 +32,15 @@ void uartRpcClientSendRequest(
         rpc->_tempTxBuffer[i+1] = data[i];
     }
     
-    rpc->_tempTxBuffer[dataSize+3] = crc_8(
+    rpc->_tempTxBuffer[dataSize+1] = crc_8(
         rpc->_tempTxBuffer,
         dataSize+1
     );
     int finalSize = cobsEncode(rpc->_tempTxBuffer,
         dataSize+2,
         rpc->_txBuffer);
-    rpc->uartSend(rpc->context,rpc->_txBuffer,finalSize);
-
-    if (type > 128){
+    
+    if (type > STREAM_COMMAND_RESPONSE_CODE){
         rpc->_state = UART_RPC_RECEIVING_STREAM;
         rpc->_expectedStreamPacketId = 0;
     } else {
@@ -50,6 +48,23 @@ void uartRpcClientSendRequest(
     }
     rpc->startOrResetTimer(rpc->context
         ,rpc->responseTimeMs);
+    
+    rpc->uartSend(rpc->context,rpc->_txBuffer,finalSize);
+}
+
+void stopStream(struct UartRpcClient* client)
+{
+    //this is the cobs encoded final command 
+    static const uint8_t stopSendingStreamCommand[] = 
+        {3, 0xFF, 0xAA, 0};
+    client->_state = UART_RPC_AWAITING_STOP_STREAM;
+    client->uartSend(client->context,
+        stopSendingStreamCommand,
+        sizeof(stopSendingStreamCommand)
+    );
+    client->startOrResetTimer(client->context,
+        client->responseTimeMs
+    );
 }
 
 void uartRpcClientOnReceiveData(
@@ -82,25 +97,15 @@ void uartRpcClientOnReceiveData(
         return;
     }
 
-    //this is the cobs encoded final command 
-    static const uint8_t stopSendingStreamCommand[] = 
-        {3, 0xFF, 0xAA, 0};
     switch (client->_state)
     {
     case UART_RPC_IDLE:
     {
         if (client->onError != NULL)
             client->onError(UART_RPC_UNSOLICITED_MESSAGE);
-        bool wasStreamMessage = messagePtr[0] > 128;
+        bool wasStreamMessage = messagePtr[0] > STREAM_COMMAND_RESPONSE_CODE;
         if (wasStreamMessage){
-            client->_state = UART_RPC_AWAITING_STOP_STREAM;
-            client->uartSend(client->context,
-                stopSendingStreamCommand,
-                sizeof(stopSendingStreamCommand)
-            );
-            client->startOrResetTimer(client->context,
-                client->responseTimeMs
-            );
+            stopStream(client);
         }
     }
         break;
@@ -122,12 +127,39 @@ void uartRpcClientOnReceiveData(
         break;
     case UART_RPC_RECEIVING_STREAM:
     {
-        if ((messagePtr[1]>>4) == 0x0F){
+        uint8_t type = messagePtr[0];
+        if (type < STREAM_COMMAND_RESPONSE_CODE){
+            struct UartRpcResponse resp = {
+                .type = messagePtr[0],
+                .data = messagePtr+1,
+                .len = messageLen - 2,
+
+                .isStream = false,
+                .streamSubtype = 0,
+                .streamIndex = 0
+            };
+            client->onResponseReceived(&resp);
             client->stopTimer(client->context);
             client->_state = UART_RPC_IDLE;
             break;
         }
+        uint8_t subType = messagePtr[1]>>4;
+        // if (subType > END_OF_STREAM_SUB_TYPE){
+        //     client->stopTimer(client->context);
+        //     client->_state = UART_RPC_IDLE;
+        //     break;
+        // }
 
+        int streamId =
+            (messagePtr[1] &0x0F) << 8 | messagePtr[2];
+
+        if (streamId != client->_expectedStreamPacketId){
+            if (client->onError != NULL){
+                client->onError(UART_RPC_MISSING_PACKET_IN_STREAM);
+            }
+        } 
+        client->_expectedStreamPacketId = streamId + 1;
+        
         struct UartRpcResponse resp = {
             .type = messagePtr[0],
             .data = messagePtr+3,
@@ -138,23 +170,21 @@ void uartRpcClientOnReceiveData(
             .streamIndex = (messagePtr[1] &0x0F) << 8 | messagePtr[2],
         };
         client->onResponseReceived(&resp);
-        client->startOrResetTimer(client->context, 
-            client->responseTimeMs);
+        if (subType < END_OF_STREAM_SUB_TYPE){
+            client->startOrResetTimer(client->context, 
+                client->responseTimeMs);
+        } else {
+            client->stopTimer(client->context);
+        }
     }
         break;
     case UART_RPC_AWAITING_STOP_STREAM:
     {
-        if ((messagePtr[1]>>4) == 0x0F){
+        if ((messagePtr[1]>>4) > END_OF_STREAM_SUB_TYPE){
             client->_state = UART_RPC_IDLE;
             break;
         } else {
-            client->uartSend(client->context,
-                stopSendingStreamCommand,
-                sizeof(stopSendingStreamCommand)
-            );
-            client->startOrResetTimer(client->context,
-                client->responseTimeMs
-            );
+            stopStream(client);
         }
     }
         break;
