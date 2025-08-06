@@ -46,6 +46,7 @@ struct UartRpcClient
     void (*onResponseReceived)
         (struct UartRpcResponse* message);
     void (*onError)(enum UartRpcError error);
+    void (*onStateChanged)(enum UartRpcClientState state);
 };
 
 // the uart rpc struct must be pre-initialized 
