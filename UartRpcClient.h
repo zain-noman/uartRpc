@@ -20,9 +20,7 @@ struct UartRpcResponse {
     uint8_t type;
     const uint8_t* data;
     uint8_t len;
-
     bool isStream;
-    uint8_t streamSubtype;
     uint16_t streamIndex;
 };
 
@@ -73,7 +71,7 @@ void uartRpcClientOnReceiveData(
     uint8_t data
 );
 
-void stopStream(struct UartRpcClient* client);
+void uartRpcClientStopStream(struct UartRpcClient* client);
 
 #ifdef __cplusplus
 }

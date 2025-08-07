@@ -29,7 +29,6 @@ void uartRpcServerSendResponse(
 void uartRpcServerSendStreamPacket(
     struct UartRpcServer* rpc,
     uint8_t type,
-    uint8_t sub_type,
     int index,
     uint8_t* data,
     uint8_t dataSize
@@ -38,8 +37,7 @@ void uartRpcServerSendStreamPacket(
     if (dataSize > 249) return;
 
     rpc->_tempTxBuffer[0] = type;
-    rpc->_tempTxBuffer[1] = sub_type<<4 | 
-        ((index>>8)& 0x0F);
+    rpc->_tempTxBuffer[1] = (index>>8) & 0xFF;
     rpc->_tempTxBuffer[2] = index & 0xFF;
     for (int i = 0; i < dataSize; i++){
         rpc->_tempTxBuffer[i+3] = data[i];
@@ -68,7 +66,8 @@ void uartRpcServerOnReceiveData(
     
     if (status != COBS_MESSAGE_COMPLETE){
         if (server->onError != NULL)
-            server->onError(UART_RPC_FRAMING_ERROR);
+            server->onError(
+                server->context,UART_RPC_FRAMING_ERROR);
         return;
     }
     
@@ -80,14 +79,21 @@ void uartRpcServerOnReceiveData(
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
         if (server->onError != NULL)
-            server->onError(UART_RPC_CRC_MISMATCH);
+            server->onError(server->context,
+                UART_RPC_CRC_MISMATCH);
         return;
     }
-    server->onRequestReceived(messagePtr[0],messagePtr+1,
-        messageLen-2);
+    server->onRequestReceived(server->context,
+        messagePtr[0],messagePtr+1,messageLen-2);
 }
 
-void uartRpcServerInit()
+void uartRpcSendEndOfStream(struct UartRpcServer* rpc)
 {
-    //nothing yet
+    uartRpcServerSendResponse(rpc,
+        STOP_SENDING_STREAM_COMMAND_TYPE,NULL,0);
+}
+
+void uartRpcServerInit(struct UartRpcServer* rpc)
+{
+    (void) rpc;
 }

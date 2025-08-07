@@ -7,13 +7,13 @@ void mockStartOrResetTimer(void *context, int timerTimeMs);
 void mockStopTimer(void* context);
 void mockClientUartSend(void *context, 
     const uint8_t *data, uint8_t dataSize);
-void clientsResponseHandler(struct UartRpcResponse *message);
-void clientErrorHandler(enum UartRpcError error);
+void clientsResponseHandler(void *context, struct UartRpcResponse *message);
+void clientErrorHandler(void *context, enum UartRpcError error);
 void mockServerUartSend(void *context, const uint8_t *data,
     uint8_t dataSize);
-void onRequestReceived(uint8_t type, uint8_t *message, uint8_t msgLen);
-void serverErrorHandler(enum UartRpcError error);
-void onClientStateChange(enum UartRpcClientState state);
+void onRequestReceived(void *context, uint8_t type, uint8_t *message, uint8_t msgLen);
+void serverErrorHandler(void *context, enum UartRpcError error);
+void onClientStateChange(void *context, enum UartRpcClientState state);
 
 
 struct UartRpcClient client = {
@@ -49,14 +49,13 @@ void mockClientUartSend(void *context, const uint8_t *data, uint8_t dataSize)
     }   
 }
 
-void clientsResponseHandler(struct UartRpcResponse *message)
+void clientsResponseHandler(void *context, struct UartRpcResponse *message)
 {
     printf("got response from server. type %02X", 
         message->type
     );
     if (message->isStream){
-        printf(", subtype %02X, stream index %d",
-            message->streamSubtype,
+        printf(" stream index %d",
             message->streamIndex
         );
     }
@@ -67,7 +66,7 @@ void clientsResponseHandler(struct UartRpcResponse *message)
     printf("\n");
 }
 
-void clientErrorHandler(enum UartRpcError error)
+void clientErrorHandler(void *context, enum UartRpcError error)
 {
     printf("Error on client %d\n",error);
 }
@@ -79,18 +78,18 @@ void mockServerUartSend(void *context, const uint8_t *data, uint8_t dataSize)
     }  
 } 
 
-void onRequestReceived(uint8_t type, uint8_t *message, uint8_t msgLen)
+void onRequestReceived(void *context, uint8_t type, uint8_t *message, uint8_t msgLen)
 {
     printf("Request Received by Server. type %02X, len:%d \n",
         type, msgLen);
 }
 
-void serverErrorHandler(enum UartRpcError error)
+void serverErrorHandler(void *context, enum UartRpcError error)
 {
     printf("Error on server %d\n",error);
 }
 
-void onClientStateChange(enum UartRpcClientState state)
+void onClientStateChange(void *context, enum UartRpcClientState state)
 {
     switch (state)
     {
@@ -114,7 +113,7 @@ void onClientStateChange(enum UartRpcClientState state)
 int main()
 {
     uartRpcClientInit(&client);
-    uartRpcServerInit();
+    uartRpcServerInit(&server);
     
     // normal request
     uartRpcClientSendRequest(&client,12,"hello",5);
@@ -122,14 +121,13 @@ int main()
 
     // stream request
     uartRpcClientSendRequest(&client,130,"hello",5);
-    uartRpcServerSendStreamPacket(&server,130,0,0,"hi 0",4);
-    uartRpcServerSendStreamPacket(&server,130,0,1,"hi 1",4);
-    uartRpcServerSendStreamPacket(&server,130,0,2,"hi 2",4);
+    uartRpcServerSendStreamPacket(&server,130,0,"hi 0",4);
+    uartRpcServerSendStreamPacket(&server,130,1,"hi 1",4);
+    uartRpcServerSendStreamPacket(&server,130,2,"hi 2",4);
     // skip packet 3 and see if the client is informed 
-    uartRpcServerSendStreamPacket(&server,130,0,4,"hi 4",4);
-    uartRpcServerSendStreamPacket(&server,130,0,5,"hi 5",4);
-    uartRpcServerSendStreamPacket(&server,130,
-        END_OF_STREAM_SUB_TYPE,6,"bye",3);
+    uartRpcServerSendStreamPacket(&server,130,4,"hi 4",4);
+    uartRpcServerSendStreamPacket(&server,130,5,"hi 5",4);
+    uartRpcSendEndOfStream(&server);
 
     //unsolicited normal response
     uartRpcServerSendResponse(&server,12,"hi",2);
@@ -137,9 +135,8 @@ int main()
     //unsolicited stream response
     // the server should automatically get a stop stream
     // command
-    uartRpcServerSendStreamPacket(&server,130,0,8,"hi",2);
-    uartRpcServerSendStreamPacket(&server,130,1,8,"hi",2);
+    uartRpcServerSendStreamPacket(&server,130,0,"hi",2);
+    uartRpcServerSendStreamPacket(&server,130,1,"hi",2);
     // the client should exit the awaiting stream end state
-    uartRpcServerSendStreamPacket(&server,130,
-        END_OF_STREAM_SUB_TYPE,5,"bye",3);
+    uartRpcSendEndOfStream(&server);
 }

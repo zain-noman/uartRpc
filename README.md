@@ -24,20 +24,19 @@ The CRC field will be the CRC of the whole packet (excluding the 'CRC' field its
 There is no length field inside the packet as the cobs framing itself can be used to decipher the length.
 
 The type field will be set by user but it must obey the following rules 
-- Type < 128 : normal command/response
-- Type >= 128 : stream command/response
-- Type == 0xFF : stop stream command
+- Type < 128 : normal request/response
+- Type >= 128 : stream request/response
+- Type == 0x7F : stop stream request/response
 
 ## Stream Responses
 Often times we run into a situation where we want to monitor something, for example we might want to see the ADC readings, and say we would want the device to send adc readings after every second. For such scenarios, the 'Value' field will contain the folllowing
 ```
-| Subtype |  Index in Stream  |     Value    |
-|  4 bit  | 12 bit, MSB first |  0-249 bytes |
+|  Index in Stream  |     Value    |
+| 16 bit, MSB first |  0-249 bytes |
 ```
+The Index-In-Stream field gives a way to determine if any packets were missed. Index in stream begins with 0 
 
-The subtype field allows for sending things like errrors and end of stream. The Index-In-Stream field gives a way to determine if any packets were missed. Index in stream begins with 0 
-
-subtypes greater than or equal to 8 indicate end of stream
+a stream will end whenever a non-stream response is received. The response 0x7F is reserved for end of stream.
 
 ## Non Blocking, Callback based api
 such api's can be a bit cumbersome to use but are easier to implement in a platform agnostic way.

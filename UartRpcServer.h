@@ -15,11 +15,12 @@ struct UartRpcServer{
 
     // callbacks
     void (*onRequestReceived)
-        (uint8_t type, uint8_t* message, uint8_t msgLen);
-    void (*onError)(enum UartRpcError error);
+        (void *context, uint8_t type, uint8_t* message, uint8_t msgLen);
+    void (*onError)
+        (void *context, enum UartRpcError error);
 };
 
-void uartRpcServerInit();
+void uartRpcServerInit(struct UartRpcServer* rpc);
 
 // for servers only
 void uartRpcServerSendResponse(
@@ -33,11 +34,12 @@ void uartRpcServerSendResponse(
 void uartRpcServerSendStreamPacket(
     struct UartRpcServer* rpc,
     uint8_t type,
-    uint8_t sub_type,
     int index,
     uint8_t* data,
     uint8_t dataSize
 );
+
+void uartRpcSendEndOfStream(struct UartRpcServer* rpc);
 
 void uartRpcServerOnReceiveData(
     struct UartRpcServer* server,
