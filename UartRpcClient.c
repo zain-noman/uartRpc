@@ -1,6 +1,5 @@
 #include "UartRpcClient.h"
 #include "checksum.h"
-
 void uartRpcClientInit(struct UartRpcClient* rpc)
 {
     rpc->_state = UART_RPC_IDLE;
@@ -126,8 +125,8 @@ void uartRpcClientOnReceiveData(
             .isStream = false,
             .streamIndex = 0
         };
-        client->onResponseReceived(client->context, &resp);
         client->stopTimer(client->context);
+        client->onResponseReceived(client->context, &resp);
         client->_state = UART_RPC_IDLE;
         if (client->onStateChanged != NULL) 
             client->onStateChanged(client->context, client->_state);
@@ -145,8 +144,8 @@ void uartRpcClientOnReceiveData(
                 .isStream = false,
                 .streamIndex = 0
             };
-            client->onResponseReceived(client->context,&resp);
             client->stopTimer(client->context);
+            client->onResponseReceived(client->context,&resp);
             client->_state = UART_RPC_IDLE;
             if (client->onStateChanged != NULL) 
                 client->onStateChanged(client->context,client->_state);
