@@ -95,5 +95,5 @@ void uartRpcSendEndOfStream(struct UartRpcServer* rpc)
 
 void uartRpcServerInit(struct UartRpcServer* rpc)
 {
-    (void) rpc;
+    cobsDecoderInit(&(rpc->_cobsDecoder),NULL);
 }
