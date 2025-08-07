@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define COBS_BUFFER_SIZE 256
@@ -54,3 +59,8 @@ void cobsDecoderGetMessageByRef(
  * In case of overflow returns -1
  */
 int cobsEncode(uint8_t* data, int dataLen, uint8_t*outBuf);
+
+
+#ifdef __cplusplus
+}
+#endif

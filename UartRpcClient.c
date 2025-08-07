@@ -10,14 +10,14 @@ void uartRpcClientInit(struct UartRpcClient* rpc)
 void informUartRpcClientTimerExpired(struct UartRpcClient* rpc)
 {
     rpc->_state = UART_RPC_IDLE;
-    if (rpc->onStateChanged != NULL) 
-        rpc->onStateChanged(rpc->_state);
+    if (rpc->onStateChanged != NULL)
+        rpc->onStateChanged(rpc->context,rpc->_state);
 
     if (rpc->_state == UART_RPC_AWAITING_STOP_STREAM){    
         return;
     }
     if (rpc->onError != NULL){
-        rpc->onError(UART_RPC_TIMEOUT);
+        rpc->onError(rpc->context,UART_RPC_TIMEOUT);
     }
 }
 
@@ -50,7 +50,7 @@ void uartRpcClientSendRequest(
         rpc->_state = UART_RPC_AWAITING_RESPONSE;
     }
     if (rpc->onStateChanged != NULL) 
-        rpc->onStateChanged(rpc->_state);
+        rpc->onStateChanged(rpc->context,rpc->_state);
     rpc->startOrResetTimer(rpc->context
         ,rpc->responseTimeMs);
     
@@ -64,7 +64,7 @@ void stopStream(struct UartRpcClient* client)
         {3, 0xFF, 0xAC, 0};
     client->_state = UART_RPC_AWAITING_STOP_STREAM;
     if (client->onStateChanged != NULL) 
-        client->onStateChanged(client->_state);
+        client->onStateChanged(client->context, client->_state);
     client->uartSend(client->context,
         stopSendingStreamCommand,
         sizeof(stopSendingStreamCommand)
@@ -86,7 +86,7 @@ void uartRpcClientOnReceiveData(
     
     if (status != COBS_MESSAGE_COMPLETE){
         if (client->onError != NULL)
-            client->onError(UART_RPC_FRAMING_ERROR);
+            client->onError(client->context, UART_RPC_FRAMING_ERROR);
         return;
     }
     
@@ -100,7 +100,7 @@ void uartRpcClientOnReceiveData(
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
         if (client->onError != NULL)
-            client->onError(UART_RPC_CRC_MISMATCH);
+            client->onError(client->context, UART_RPC_CRC_MISMATCH);
         return;
     }
 
@@ -109,7 +109,7 @@ void uartRpcClientOnReceiveData(
     case UART_RPC_IDLE:
     {
         if (client->onError != NULL)
-            client->onError(UART_RPC_UNSOLICITED_MESSAGE);
+            client->onError(client->context, UART_RPC_UNSOLICITED_MESSAGE);
         bool wasStreamMessage = messagePtr[0] > STREAM_COMMAND_RESPONSE_CODE;
         if (wasStreamMessage){
             stopStream(client);
@@ -127,11 +127,11 @@ void uartRpcClientOnReceiveData(
             .streamSubtype = 0,
             .streamIndex = 0
         };
-        client->onResponseReceived(&resp);
+        client->onResponseReceived(client->context, &resp);
         client->stopTimer(client->context);
         client->_state = UART_RPC_IDLE;
         if (client->onStateChanged != NULL) 
-            client->onStateChanged(client->_state);
+            client->onStateChanged(client->context, client->_state);
     }
         break;
     case UART_RPC_RECEIVING_STREAM:
@@ -147,11 +147,11 @@ void uartRpcClientOnReceiveData(
                 .streamSubtype = 0,
                 .streamIndex = 0
             };
-            client->onResponseReceived(&resp);
+            client->onResponseReceived(client->context,&resp);
             client->stopTimer(client->context);
             client->_state = UART_RPC_IDLE;
             if (client->onStateChanged != NULL) 
-                client->onStateChanged(client->_state);
+                client->onStateChanged(client->context,client->_state);
             break;
         }
         uint8_t subType = messagePtr[1]>>4;
@@ -161,7 +161,7 @@ void uartRpcClientOnReceiveData(
 
         if (streamId != client->_expectedStreamPacketId){
             if (client->onError != NULL){
-                client->onError(UART_RPC_MISSING_PACKET_IN_STREAM);
+                client->onError(client->context, UART_RPC_MISSING_PACKET_IN_STREAM);
             }
         } 
         client->_expectedStreamPacketId = streamId + 1;
@@ -175,7 +175,7 @@ void uartRpcClientOnReceiveData(
             .streamSubtype = messagePtr[1]>>4,
             .streamIndex = (messagePtr[1] &0x0F) << 8 | messagePtr[2],
         };
-        client->onResponseReceived(&resp);
+        client->onResponseReceived(client->context,&resp);
         if (subType < END_OF_STREAM_SUB_TYPE){
             client->startOrResetTimer(client->context, 
                 client->responseTimeMs);
@@ -183,7 +183,7 @@ void uartRpcClientOnReceiveData(
             client->stopTimer(client->context);
             client->_state = UART_RPC_IDLE;
             if (client->onStateChanged != NULL) 
-                client->onStateChanged(client->_state);
+                client->onStateChanged(client->context,client->_state);
         }
     }
         break;
@@ -193,7 +193,7 @@ void uartRpcClientOnReceiveData(
             client->stopTimer(client->context);
             client->_state = UART_RPC_IDLE;
             if (client->onStateChanged != NULL) 
-                client->onStateChanged(client->_state);
+                client->onStateChanged(client->context,client->_state);
             break;
         } else {
             stopStream(client);

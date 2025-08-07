@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "cobs.h"
@@ -44,9 +49,9 @@ struct UartRpcClient
     
     // callbacks 
     void (*onResponseReceived)
-        (struct UartRpcResponse* message);
-    void (*onError)(enum UartRpcError error);
-    void (*onStateChanged)(enum UartRpcClientState state);
+        (void* context, struct UartRpcResponse* message);
+    void (*onError)(void* context, enum UartRpcError error);
+    void (*onStateChanged)(void* context, enum UartRpcClientState state);
 };
 
 // the uart rpc struct must be pre-initialized 
@@ -69,3 +74,7 @@ void uartRpcClientOnReceiveData(
 );
 
 void stopStream(struct UartRpcClient* client);
+
+#ifdef __cplusplus
+}
+#endif
