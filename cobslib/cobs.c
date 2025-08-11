@@ -33,6 +33,10 @@ CobsDecoderStatus cobsDecoderAppend(
     } else{
         //encoded byte
         if (receivedData == 0){
+        	if (cobs->position == 0){
+        		return COBS_UNEXPECTED_EOP;
+        	}
+
             //packet ended. call callback and reset
             if (cobs->onCompleteMessageReceived != NULL)
             {
@@ -40,7 +44,6 @@ CobsDecoderStatus cobsDecoderAppend(
                     cobs->buffer+1,cobs->position-1
                 );
             }
-
             cobs->messageLen = cobs->position-1;
 
             cobs->position = 0;
