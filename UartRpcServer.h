@@ -26,7 +26,7 @@ void uartRpcServerInit(struct UartRpcServer* rpc);
 void uartRpcServerSendResponse(
     struct UartRpcServer* rpc,
     uint8_t type,
-    uint8_t* data,
+    const uint8_t* data,
     uint8_t dataSize
 );
 
@@ -35,7 +35,7 @@ void uartRpcServerSendStreamPacket(
     struct UartRpcServer* rpc,
     uint8_t type,
     int index,
-    uint8_t* data,
+    const uint8_t* data,
     uint8_t dataSize
 );
 
