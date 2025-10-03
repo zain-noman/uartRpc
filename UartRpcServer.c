@@ -76,6 +76,7 @@ void uartRpcServerOnReceiveData(
     int messageLen;
     cobsDecoderGetMessageByRef(&(server->_cobsDecoder),
         &messagePtr, &messageLen);
+    if (messageLen == 0) return;
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
         if (server->onError != NULL)
