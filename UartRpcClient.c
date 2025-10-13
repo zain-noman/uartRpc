@@ -8,15 +8,15 @@ void uartRpcClientInit(struct UartRpcClient* rpc)
 
 void informUartRpcClientTimerExpired(struct UartRpcClient* rpc)
 {
+    if (rpc->onError != NULL){
+        rpc->onError(rpc->context,UART_RPC_TIMEOUT);
+    }
     rpc->_state = UART_RPC_IDLE;
     if (rpc->onStateChanged != NULL)
         rpc->onStateChanged(rpc->context,rpc->_state);
 
     if (rpc->_state == UART_RPC_AWAITING_STOP_STREAM){    
         return;
-    }
-    if (rpc->onError != NULL){
-        rpc->onError(rpc->context,UART_RPC_TIMEOUT);
     }
 }
 
@@ -96,6 +96,7 @@ void uartRpcClientOnReceiveData(
     int messageLen;
     cobsDecoderGetMessageByRef(&(client->_cobsDecoder),
         &messagePtr, &messageLen);
+    if (messageLen == 0) return;
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
         if (client->onError != NULL)
