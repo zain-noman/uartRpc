@@ -4,7 +4,7 @@
 void uartRpcServerSendResponse(
     struct UartRpcServer* rpc,
     uint8_t type,
-    uint8_t* data,
+    const uint8_t* data,
     uint8_t dataSize
 )
 {
@@ -30,7 +30,7 @@ void uartRpcServerSendStreamPacket(
     struct UartRpcServer* rpc,
     uint8_t type,
     int index,
-    uint8_t* data,
+    const uint8_t* data,
     uint8_t dataSize
 ){
     if (type < 128) return;
@@ -76,6 +76,7 @@ void uartRpcServerOnReceiveData(
     int messageLen;
     cobsDecoderGetMessageByRef(&(server->_cobsDecoder),
         &messagePtr, &messageLen);
+    if (messageLen == 0) return;
     uint8_t calculatedCrc = crc_8(messagePtr,messageLen-1);
     if (messagePtr[messageLen-1] != calculatedCrc){
         if (server->onError != NULL)
